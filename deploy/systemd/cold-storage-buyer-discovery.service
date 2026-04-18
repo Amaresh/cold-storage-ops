@@ -1,0 +1,16 @@
+[Unit]
+Description=Cold Storage Buyer Discovery worker
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/opt/cold-storage-buyer-discovery/run.py
+
+[Service]
+Type=oneshot
+User=coldstorage
+Group=coldstorage
+WorkingDirectory=/opt/cold-storage-buyer-discovery
+EnvironmentFile=-/etc/cold-storage/cold-storage-buyer-discovery.env
+ExecStartPre=/bin/sh -c 'if [ "${BUYER_DISCOVERY_REQUIRE_NORDVPN:-false}" = "true" ]; then systemctl is-active --quiet nordvpnd.service; fi'
+ExecStartPre=/bin/sh -c 'if [ "${BUYER_DISCOVERY_REQUIRE_BROWSER:-false}" = "true" ]; then command -v "${BUYER_DISCOVERY_BROWSER_BIN:-chromium-browser}" >/dev/null 2>&1; fi'
+ExecStart=/usr/bin/python3 /opt/cold-storage-buyer-discovery/run.py
+

@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule Cold Storage Buyer Discovery worker
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+RandomizedDelaySec=15m
+Persistent=true
+Unit=cold-storage-buyer-discovery.service
+
+[Install]
+WantedBy=timers.target
+

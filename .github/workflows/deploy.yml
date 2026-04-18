@@ -1,0 +1,130 @@
+name: Deploy to manual-crawler
+
+on:
+  repository_dispatch:
+    types: [deploy]
+  workflow_dispatch:
+    inputs:
+      project:
+        description: Project to deploy
+        required: true
+        type: choice
+        options:
+          - cold-storage-backend
+          - cold-storage-buyer-discovery
+      ref:
+        description: Optional commit SHA to deploy
+        required: false
+        type: string
+      enable_timer:
+        description: Enable the buyer-discovery timer after deploy
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout ops repo
+        uses: actions/checkout@v4
+
+      - name: Validate deploy request
+        id: validate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_PROJECT: ${{ github.event.client_payload.project }}
+          DISPATCH_REF: ${{ github.event.client_payload.ref }}
+          DISPATCH_REPO: ${{ github.event.client_payload.repo }}
+          DISPATCH_ENABLE_TIMER: ${{ github.event.client_payload.enable_timer }}
+          INPUT_PROJECT: ${{ inputs.project }}
+          INPUT_REF: ${{ inputs.ref }}
+          INPUT_ENABLE_TIMER: ${{ inputs.enable_timer }}
+        run: |
+          set -euo pipefail
+
+          project="${DISPATCH_PROJECT:-${INPUT_PROJECT:-}}"
+          ref="${DISPATCH_REF:-${INPUT_REF:-}}"
+          trigger_repo="${DISPATCH_REPO:-${GITHUB_REPOSITORY}}"
+          enable_timer="${DISPATCH_ENABLE_TIMER:-${INPUT_ENABLE_TIMER:-false}}"
+
+          if [ -z "$project" ]; then
+            echo "❌ No project specified"
+            exit 1
+          fi
+
+          case "$project" in
+            cold-storage-backend|cold-storage-buyer-discovery) ;;
+            *)
+              echo "❌ Unsupported project: $project"
+              exit 1
+              ;;
+          esac
+
+          if [ -n "$ref" ] && ! printf '%s' "$ref" | grep -Eq '^[0-9a-f]{7,40}$'; then
+            echo "❌ Ref must be a commit SHA"
+            exit 1
+          fi
+
+          case "$enable_timer" in
+            true|false) ;;
+            *)
+              echo "❌ enable_timer must be true or false"
+              exit 1
+              ;;
+          esac
+
+          script="deploy/scripts/${project}.sh"
+          if [ ! -f "$script" ]; then
+            echo "❌ Missing deploy script: $script"
+            exit 1
+          fi
+
+          echo "project=$project" >> "$GITHUB_OUTPUT"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "trigger_repo=$trigger_repo" >> "$GITHUB_OUTPUT"
+          echo "enable_timer=$enable_timer" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy on manual-crawler
+        uses: appleboy/ssh-action@v1
+        env:
+          PROJECT: ${{ steps.validate.outputs.project }}
+          DEPLOY_REF: ${{ steps.validate.outputs.ref }}
+          ENABLE_TIMER: ${{ steps.validate.outputs.enable_timer }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST_CRAWLER }}
+          username: root
+          key: ${{ secrets.DEPLOY_SSH_KEY_CRAWLER }}
+          command_timeout: 25m
+          envs: PROJECT,DEPLOY_REF,ENABLE_TIMER
+          script: |
+            set -euo pipefail
+
+            if [ ! -d /opt/cold-storage-ops/.git ]; then
+              git clone https://github.com/Amaresh/cold-storage-ops.git /opt/cold-storage-ops
+            fi
+
+            cd /opt/cold-storage-ops
+            if git fetch origin main --quiet 2>/dev/null; then
+              target_ref="origin/main"
+            else
+              git fetch origin master --quiet
+              target_ref="origin/master"
+            fi
+            git reset --hard "$target_ref" --quiet
+
+            chmod +x deploy/scripts/*.sh
+            bash "deploy/scripts/${PROJECT}.sh"
+
+      - name: Post-deploy summary
+        if: always()
+        run: |
+          echo "## Deploy Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Project:** ${{ steps.validate.outputs.project }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Ref:** ${{ steps.validate.outputs.ref || 'default branch HEAD' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Enable timer:** ${{ steps.validate.outputs.enable_timer }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Triggered by:** ${{ steps.validate.outputs.trigger_repo }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Status:** ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+

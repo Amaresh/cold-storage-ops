@@ -1,0 +1,20 @@
+projects:
+  cold-storage-backend:
+    repo: Amaresh/cold-storage-backend
+    host: manual-crawler
+    remote_dir: /opt/cold-storage-backend-src
+    deploy_method: systemd-jar
+    service_name: cold-storage-backend.service
+    artifact_path: /srv/cold-storage-backend/app.jar
+    health_check: curl -sf http://localhost:9090/actuator/health
+
+  cold-storage-buyer-discovery:
+    repo: Amaresh/cold-storage-buyer-discovery
+    host: manual-crawler
+    remote_dir: /opt/cold-storage-buyer-discovery
+    deploy_method: systemd-timer
+    service_name: cold-storage-buyer-discovery.service
+    timer_name: cold-storage-buyer-discovery.timer
+    env_file: /etc/cold-storage/cold-storage-buyer-discovery.env
+    health_check: python3 /opt/cold-storage-buyer-discovery/run.py --list-sources
+
