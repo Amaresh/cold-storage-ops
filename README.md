@@ -28,6 +28,10 @@ Set these in `Amaresh/cold-storage-ops`:
 - `DEPLOY_SSH_KEY_CRAWLER` — private SSH key that can log into `manual-crawler` as `root`
 - `REPO_SYNC_GITHUB_TOKEN` — GitHub token the host can use to clone or update private source repos such as `Amaresh/cold-storage-backend`
 
+Host prerequisite for backend deploys:
+
+- Java 21 must be installed on `manual-crawler`. The current backend service uses `/opt/java-21-openjdk-amd64`, and the deploy script builds with that toolchain so Maven matches the runtime.
+
 To enable automatic cross-repo dispatch from project repos, also set this secret in each source repo:
 
 - `OPS_REPO_DISPATCH_TOKEN` — GitHub token with permission to dispatch workflows in `Amaresh/cold-storage-ops`

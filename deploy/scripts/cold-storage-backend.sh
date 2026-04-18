@@ -13,12 +13,21 @@ BACKUP_DIR="${RUNTIME_DIR}/backups"
 SERVICE_NAME="cold-storage-backend.service"
 ENV_FILE="/etc/cold-storage-backend.env"
 DEPLOY_REF="${DEPLOY_REF:-}"
+JAVA_HOME="${JAVA_HOME:-/opt/java-21-openjdk-amd64}"
 
 echo "[$PROJECT] Starting deploy..."
 
 ensure_repo "$PROJECT" "$REMOTE_DIR" "$CLONE_URL" "Backend source"
 update_repo "$PROJECT" "$REMOTE_DIR" "Backend source" "$DEPLOY_REF"
 ensure_internal_api_key "$PROJECT" "$ENV_FILE" "APP_SECURITY_INTERNAL_API_KEY"
+
+if [ ! -x "${JAVA_HOME}/bin/javac" ]; then
+    echo "[$PROJECT] ❌ Java 21 compiler not found at ${JAVA_HOME}/bin/javac" >&2
+    exit 1
+fi
+
+export JAVA_HOME
+export PATH="${JAVA_HOME}/bin:${PATH}"
 
 cd "$REMOTE_DIR"
 ./mvnw --no-transfer-progress -q -DskipTests package
@@ -41,4 +50,3 @@ systemctl is-active --quiet "$SERVICE_NAME"
 wait_for_http_ok "$PROJECT" "http://localhost:9090/actuator/health"
 
 echo "[$PROJECT] ✅ Deploy complete"
-
