@@ -35,6 +35,16 @@ EOF
     return "$status"
 }
 
+ensure_git_safe_directory() {
+    local remote_dir="$1"
+
+    if git config --global --get-all safe.directory 2>/dev/null | grep -Fxq "$remote_dir"; then
+        return
+    fi
+
+    git config --global --add safe.directory "$remote_dir"
+}
+
 ensure_repo() {
     local project="$1"
     local remote_dir="$2"
@@ -53,6 +63,7 @@ ensure_repo() {
 
     mkdir -p "$(dirname "$remote_dir")"
     run_git_with_optional_token clone "$clone_url" "$remote_dir" --quiet
+    ensure_git_safe_directory "$remote_dir"
     echo "[$project] ${target_name} cloned into $remote_dir"
 }
 
@@ -63,6 +74,7 @@ update_repo() {
     local requested_ref="${4:-}"
     local target_ref=""
 
+    ensure_git_safe_directory "$remote_dir"
     cd "$remote_dir"
     if run_git_with_optional_token fetch origin main --quiet 2>/dev/null; then
         target_ref="origin/main"
