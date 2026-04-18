@@ -93,12 +93,13 @@ jobs:
           PROJECT: ${{ steps.validate.outputs.project }}
           DEPLOY_REF: ${{ steps.validate.outputs.ref }}
           ENABLE_TIMER: ${{ steps.validate.outputs.enable_timer }}
+          GITHUB_TOKEN: ${{ secrets.REPO_SYNC_GITHUB_TOKEN }}
         with:
           host: ${{ secrets.DEPLOY_HOST_CRAWLER }}
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY_CRAWLER }}
           command_timeout: 25m
-          envs: PROJECT,DEPLOY_REF,ENABLE_TIMER
+          envs: PROJECT,DEPLOY_REF,ENABLE_TIMER,GITHUB_TOKEN
           script: |
             set -euo pipefail
 
@@ -127,4 +128,3 @@ jobs:
           echo "- **Enable timer:** ${{ steps.validate.outputs.enable_timer }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Triggered by:** ${{ steps.validate.outputs.trigger_repo }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Status:** ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
-

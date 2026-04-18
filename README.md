@@ -26,6 +26,7 @@ Set these in `Amaresh/cold-storage-ops`:
 
 - `DEPLOY_HOST_CRAWLER` — `206.189.141.91`
 - `DEPLOY_SSH_KEY_CRAWLER` — private SSH key that can log into `manual-crawler` as `root`
+- `REPO_SYNC_GITHUB_TOKEN` — GitHub token the host can use to clone or update private source repos such as `Amaresh/cold-storage-backend`
 
 To enable automatic cross-repo dispatch from project repos, also set this secret in each source repo:
 
@@ -58,4 +59,3 @@ gh workflow run deploy.yml -R Amaresh/cold-storage-ops \
 - Worker env file: `/etc/cold-storage/cold-storage-buyer-discovery.env`
 - Worker service: `cold-storage-buyer-discovery.service`
 - Worker timer: `cold-storage-buyer-discovery.timer`
-

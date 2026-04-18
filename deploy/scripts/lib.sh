@@ -1,5 +1,29 @@
 #!/bin/bash
 
+run_git_with_optional_token() {
+    if [ -z "${GITHUB_TOKEN:-}" ]; then
+        git "$@"
+        return
+    fi
+
+    local askpass_script
+    askpass_script="$(mktemp)"
+    cat >"$askpass_script" <<'EOF'
+#!/bin/sh
+case "$1" in
+    *Username*) printf '%s\n' 'x-access-token' ;;
+    *Password*) printf '%s\n' "$GITHUB_TOKEN" ;;
+    *) printf '\n' ;;
+esac
+EOF
+    chmod 700 "$askpass_script"
+
+    GIT_ASKPASS="$askpass_script" GIT_TERMINAL_PROMPT=0 git "$@"
+    local status=$?
+    rm -f "$askpass_script"
+    return "$status"
+}
+
 ensure_repo() {
     local project="$1"
     local remote_dir="$2"
@@ -17,7 +41,7 @@ ensure_repo() {
     fi
 
     mkdir -p "$(dirname "$remote_dir")"
-    git clone "$clone_url" "$remote_dir" --quiet
+    run_git_with_optional_token clone "$clone_url" "$remote_dir" --quiet
     echo "[$project] ${target_name} cloned into $remote_dir"
 }
 
@@ -29,10 +53,10 @@ update_repo() {
     local target_ref=""
 
     cd "$remote_dir"
-    if git fetch origin main --quiet 2>/dev/null; then
+    if run_git_with_optional_token fetch origin main --quiet 2>/dev/null; then
         target_ref="origin/main"
     else
-        git fetch origin master --quiet
+        run_git_with_optional_token fetch origin master --quiet
         target_ref="origin/master"
     fi
 
