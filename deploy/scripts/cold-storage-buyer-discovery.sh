@@ -27,7 +27,11 @@ update_repo "$PROJECT" "$REMOTE_DIR" "Worker source" "$DEPLOY_REF"
 install -d -m 0755 -o root -g root "$ENV_DIR"
 install_if_missing "$ENV_TEMPLATE" "$ENV_FILE" 0640 root root
 append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_BACKEND_BASE_URL" "http://127.0.0.1:9090"
+append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_TENANT_ID" "demo-tenant"
+append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_WAREHOUSE_ID" "guntur-hub"
 append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_INTERNAL_API_HEADER" "X-API-Key"
+append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_DISCOVERY_SOURCE" "buyer-discovery-worker"
+append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_USE_SAMPLE_SNAPSHOTS" "true"
 
 backend_internal_api_key="$(read_env_value "$BACKEND_ENV_FILE" "APP_SECURITY_INTERNAL_API_KEY" || true)"
 if [ -n "$backend_internal_api_key" ]; then
@@ -52,4 +56,3 @@ else
 fi
 
 echo "[$PROJECT] ✅ Deploy complete"
-
