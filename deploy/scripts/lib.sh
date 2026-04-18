@@ -1,6 +1,17 @@
 #!/bin/bash
 
+normalize_github_token() {
+    if [ -z "${GITHUB_TOKEN:-}" ]; then
+        return
+    fi
+
+    GITHUB_TOKEN="$(printf '%s' "$GITHUB_TOKEN" | tr -d '\r\n')"
+    export GITHUB_TOKEN
+}
+
 run_git_with_optional_token() {
+    normalize_github_token
+
     if [ -z "${GITHUB_TOKEN:-}" ]; then
         git "$@"
         return
