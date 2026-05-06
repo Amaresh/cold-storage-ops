@@ -12,6 +12,7 @@ on:
         options:
           - cold-storage-backend
           - cold-storage-buyer-discovery
+          - cold-storage-webapp
       ref:
         description: Optional commit SHA to deploy
         required: false
@@ -56,7 +57,7 @@ jobs:
           fi
 
           case "$project" in
-            cold-storage-backend|cold-storage-buyer-discovery) ;;
+            cold-storage-backend|cold-storage-buyer-discovery|cold-storage-webapp) ;;
             *)
               echo "❌ Unsupported project: $project"
               exit 1

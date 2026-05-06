@@ -18,3 +18,13 @@ projects:
     env_file: /etc/cold-storage/cold-storage-buyer-discovery.env
     health_check: python3 /opt/cold-storage-buyer-discovery/run.py --list-sources
 
+  cold-storage-webapp:
+    repo: Amaresh/cold-storage-webapp
+    host: manual-crawler
+    remote_dir: /opt/cold-storage-webapp-src
+    deploy_method: systemd-node
+    service_name: cold-storage-webapp.service
+    artifact_path: /srv/cold-storage-webapp
+    health_check: curl -sf http://localhost:3000/healthz
+    public_health_check: curl -sf http://206.189.141.91/healthz
+

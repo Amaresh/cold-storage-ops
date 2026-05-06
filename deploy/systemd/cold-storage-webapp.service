@@ -1,0 +1,19 @@
+[Unit]
+Description=Cold Storage Webapp (Next.js)
+After=network.target cold-storage-backend.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/srv/cold-storage-webapp
+EnvironmentFile=/etc/cold-storage/cold-storage-webapp.env
+ExecStart=/usr/bin/node /srv/cold-storage-webapp/node_modules/.bin/next start
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cold-storage-webapp
+
+[Install]
+WantedBy=multi-user.target
