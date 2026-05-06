@@ -29,9 +29,13 @@ install_if_missing "$ENV_TEMPLATE" "$ENV_FILE" 0640 root root
 append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_BACKEND_BASE_URL" "http://127.0.0.1:9090"
 append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_TENANT_ID" "demo-tenant"
 append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_WAREHOUSE_ID" "guntur-hub"
+append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_WAREHOUSE_HUB_TOWN" "Guntur"
+append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_MAX_RADIUS_KM" "300"
 append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_INTERNAL_API_HEADER" "X-API-Key"
 append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_DISCOVERY_SOURCE" "buyer-discovery-worker"
-append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_USE_SAMPLE_SNAPSHOTS" "true"
+append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_SEARCH_FALLBACK_URL_TEMPLATES" "https://www.startpage.com/do/dsearch?query={query},https://search.yahoo.com/search?p={query}"
+append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_SEARCH_FALLBACK_URL_TEMPLATE" "https://search.brave.com/search?q={query}"
+append_env_if_missing "$ENV_FILE" "BUYER_DISCOVERY_USE_SAMPLE_SNAPSHOTS" "false"
 
 backend_internal_api_key="$(read_env_value "$BACKEND_ENV_FILE" "APP_SECURITY_INTERNAL_API_KEY" || true)"
 if [ -n "$backend_internal_api_key" ]; then

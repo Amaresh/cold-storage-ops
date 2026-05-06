@@ -124,12 +124,18 @@ append_env_if_missing() {
     local file_path="$1"
     local key="$2"
     local value="$3"
+    local rendered_value="$value"
 
     if grep -q "^${key}=" "$file_path" 2>/dev/null; then
         return
     fi
 
-    printf '%s=%s\n' "$key" "$value" >> "$file_path"
+    if [[ "$rendered_value" =~ [[:space:]] ]]; then
+        rendered_value="${rendered_value//\"/\\\"}"
+        rendered_value="\"${rendered_value}\""
+    fi
+
+    printf '%s=%s\n' "$key" "$rendered_value" >> "$file_path"
 }
 
 read_env_value() {

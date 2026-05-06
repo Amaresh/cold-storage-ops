@@ -35,7 +35,7 @@ install -d -m 0755 "$RUNTIME_DIR"
 rsync -av --delete "$REMOTE_DIR/.next/" "$RUNTIME_DIR/.next/"
 rsync -av --delete "$REMOTE_DIR/public/" "$RUNTIME_DIR/public/"
 cp "$REMOTE_DIR/package.json" "$RUNTIME_DIR/"
-cp "$REMOTE_DIR/node_modules" "$RUNTIME_DIR/" -r
+rsync -av --delete "$REMOTE_DIR/node_modules/" "$RUNTIME_DIR/node_modules/"
 
 install -d -m 0755 "/etc/cold-storage"
 install -D -m 0600 "$SCRIPT_DIR/../env/cold-storage-webapp.env.example" "$ENV_FILE"
