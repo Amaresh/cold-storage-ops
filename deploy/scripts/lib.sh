@@ -78,12 +78,22 @@ update_repo() {
     cd "$remote_dir"
     if run_git_with_optional_token fetch origin main --quiet 2>/dev/null; then
         target_ref="origin/main"
-    else
-        run_git_with_optional_token fetch origin master --quiet
-        target_ref="origin/master"
+    fi
+    if run_git_with_optional_token fetch origin master --quiet 2>/dev/null; then
+        if [ -z "$target_ref" ]; then
+            target_ref="origin/master"
+        fi
+    fi
+
+    if [ -z "$target_ref" ]; then
+        echo "[$project] ❌ Unable to fetch origin/main or origin/master" >&2
+        exit 1
     fi
 
     if [ -n "$requested_ref" ]; then
+        if ! git cat-file -e "${requested_ref}^{commit}" 2>/dev/null; then
+            run_git_with_optional_token fetch origin "$requested_ref" --quiet 2>/dev/null || true
+        fi
         if ! git cat-file -e "${requested_ref}^{commit}" 2>/dev/null; then
             echo "[$project] ❌ Requested ref not found: $requested_ref" >&2
             exit 1
