@@ -73,6 +73,7 @@ update_repo() {
     local target_name="${3:-Code}"
     local requested_ref="${4:-}"
     local target_ref=""
+    local reset_ref=""
 
     ensure_git_safe_directory "$remote_dir"
     cd "$remote_dir"
@@ -98,10 +99,17 @@ update_repo() {
             echo "[$project] ❌ Requested ref not found: $requested_ref" >&2
             exit 1
         fi
-        git reset --hard "$requested_ref" --quiet
+        reset_ref="$requested_ref"
+    else
+        reset_ref="$target_ref"
+    fi
+
+    git reset --hard "$reset_ref" --quiet
+    git clean -fdx --quiet
+
+    if [ -n "$requested_ref" ]; then
         echo "[$project] ${target_name} updated to $(git rev-parse --short HEAD) (requested $requested_ref)"
     else
-        git reset --hard "$target_ref" --quiet
         echo "[$project] ${target_name} updated to $(git rev-parse --short HEAD)"
     fi
 }
