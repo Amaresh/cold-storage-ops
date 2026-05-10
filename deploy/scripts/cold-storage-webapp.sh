@@ -11,6 +11,8 @@ RUNTIME_DIR="/srv/cold-storage-webapp"
 SERVICE_NAME="cold-storage-webapp.service"
 ENV_FILE="/etc/cold-storage/cold-storage-webapp.env"
 DEPLOY_REF="${DEPLOY_REF:-}"
+TLS_CERT_PATH="/etc/ssl/cold-storage/cold-storage-webapp.crt"
+TLS_KEY_PATH="/etc/ssl/cold-storage/cold-storage-webapp.key"
 
 echo "[$PROJECT] Starting deploy..."
 
@@ -41,6 +43,7 @@ install -d -m 0755 "/etc/cold-storage"
 install -D -m 0600 "$SCRIPT_DIR/../env/cold-storage-webapp.env.example" "$ENV_FILE"
 
 COLD_STORAGE_API_BASE_URL="${COLD_STORAGE_API_BASE_URL:-http://206.189.141.91:9090/}"
+WEBAPP_PUBLIC_IP="${WEBAPP_PUBLIC_IP:-206.189.141.91}"
 
 if ! grep -q "^COLD_STORAGE_API_BASE_URL=" "$ENV_FILE" 2>/dev/null; then
   echo "COLD_STORAGE_API_BASE_URL=${COLD_STORAGE_API_BASE_URL}" >> "$ENV_FILE"
@@ -49,6 +52,12 @@ fi
 if ! grep -q "^NODE_ENV=" "$ENV_FILE" 2>/dev/null; then
   echo "NODE_ENV=production" >> "$ENV_FILE"
 fi
+
+if ! grep -q "^WEBAPP_PUBLIC_IP=" "$ENV_FILE" 2>/dev/null; then
+  echo "WEBAPP_PUBLIC_IP=${WEBAPP_PUBLIC_IP}" >> "$ENV_FILE"
+fi
+
+ensure_self_signed_ip_certificate "$PROJECT" "$TLS_CERT_PATH" "$TLS_KEY_PATH" "$WEBAPP_PUBLIC_IP"
 
 install_managed_file "$SCRIPT_DIR/../systemd/cold-storage-webapp.service" "/etc/systemd/system/${SERVICE_NAME}" 0644
 
@@ -70,6 +79,6 @@ if [ -f "$NGINX_CONF_SRC" ]; then
   nginx -t && systemctl reload nginx
 fi
 
-wait_for_http_ok "$PROJECT" "http://206.189.141.91/healthz"
+wait_for_http_ok_insecure "$PROJECT" "https://${WEBAPP_PUBLIC_IP}/healthz"
 
 echo "[$PROJECT] Deploy complete"

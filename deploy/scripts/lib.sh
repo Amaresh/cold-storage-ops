@@ -202,14 +202,74 @@ PY
     echo "[$project] Generated ${key_name} in $(basename "$env_file")"
 }
 
+ensure_self_signed_ip_certificate() {
+    local project="$1"
+    local cert_path="$2"
+    local key_path="$3"
+    local public_ip="$4"
+
+    if [ -f "$cert_path" ] && [ -f "$key_path" ]; then
+        echo "[$project] TLS certificate already present at $cert_path"
+        return
+    fi
+
+    local cert_dir
+    cert_dir="$(dirname "$cert_path")"
+    install -d -m 0755 "$cert_dir"
+
+    local openssl_config
+    openssl_config="$(mktemp)"
+    cat >"$openssl_config" <<EOF
+[req]
+default_bits = 2048
+prompt = no
+distinguished_name = dn
+x509_extensions = v3_req
+
+[dn]
+CN = ${public_ip}
+
+[v3_req]
+subjectAltName = @alt_names
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+
+[alt_names]
+IP.1 = ${public_ip}
+EOF
+
+    openssl req \
+        -x509 \
+        -nodes \
+        -newkey rsa:2048 \
+        -sha256 \
+        -days 365 \
+        -keyout "$key_path" \
+        -out "$cert_path" \
+        -config "$openssl_config" \
+        -extensions v3_req
+
+    chmod 600 "$key_path"
+    chmod 644 "$cert_path"
+    rm -f "$openssl_config"
+
+    echo "[$project] Generated self-signed TLS certificate for ${public_ip}"
+}
+
 wait_for_http_ok() {
     local project="$1"
     local url="$2"
     local attempts="${3:-30}"
     local delay_seconds="${4:-2}"
+    local curl_args=()
+
+    if [ "$#" -gt 4 ]; then
+        shift 4
+        curl_args=("$@")
+    fi
 
     for _ in $(seq 1 "$attempts"); do
-        if curl -sf "$url" >/dev/null 2>&1; then
+        if curl -sf "${curl_args[@]}" "$url" >/dev/null 2>&1; then
             echo "[$project] HTTP check passed: $url"
             return 0
         fi
@@ -218,4 +278,13 @@ wait_for_http_ok() {
 
     echo "[$project] ❌ HTTP check failed: $url" >&2
     return 1
+}
+
+wait_for_http_ok_insecure() {
+    local project="$1"
+    local url="$2"
+    local attempts="${3:-30}"
+    local delay_seconds="${4:-2}"
+
+    wait_for_http_ok "$project" "$url" "$attempts" "$delay_seconds" -k
 }
