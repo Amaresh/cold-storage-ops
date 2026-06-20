@@ -40,12 +40,15 @@ cp "$REMOTE_DIR/package.json" "$RUNTIME_DIR/"
 rsync -av --delete "$REMOTE_DIR/node_modules/" "$RUNTIME_DIR/node_modules/"
 
 install -d -m 0755 "/etc/cold-storage"
-install -D -m 0600 "$SCRIPT_DIR/../env/cold-storage-webapp.env.example" "$ENV_FILE"
+install_if_missing "$SCRIPT_DIR/../env/cold-storage-webapp.env.example" "$ENV_FILE" 0600
 
-COLD_STORAGE_API_BASE_URL="${COLD_STORAGE_API_BASE_URL:-http://206.189.141.91:9090/}"
-WEBAPP_PUBLIC_IP="${WEBAPP_PUBLIC_IP:-206.189.141.91}"
+# Always point the on-host webapp proxy at the local backend service.
+COLD_STORAGE_API_BASE_URL="${COLD_STORAGE_API_BASE_URL:-http://127.0.0.1:9090/}"
+WEBAPP_PUBLIC_IP="${WEBAPP_PUBLIC_IP:-157.245.105.32}"
 
-if ! grep -q "^COLD_STORAGE_API_BASE_URL=" "$ENV_FILE" 2>/dev/null; then
+if grep -q "^COLD_STORAGE_API_BASE_URL=" "$ENV_FILE" 2>/dev/null; then
+  sed -i "s|^COLD_STORAGE_API_BASE_URL=.*|COLD_STORAGE_API_BASE_URL=${COLD_STORAGE_API_BASE_URL}|" "$ENV_FILE"
+else
   echo "COLD_STORAGE_API_BASE_URL=${COLD_STORAGE_API_BASE_URL}" >> "$ENV_FILE"
 fi
 
@@ -53,7 +56,9 @@ if ! grep -q "^NODE_ENV=" "$ENV_FILE" 2>/dev/null; then
   echo "NODE_ENV=production" >> "$ENV_FILE"
 fi
 
-if ! grep -q "^WEBAPP_PUBLIC_IP=" "$ENV_FILE" 2>/dev/null; then
+if grep -q "^WEBAPP_PUBLIC_IP=" "$ENV_FILE" 2>/dev/null; then
+  sed -i "s|^WEBAPP_PUBLIC_IP=.*|WEBAPP_PUBLIC_IP=${WEBAPP_PUBLIC_IP}|" "$ENV_FILE"
+else
   echo "WEBAPP_PUBLIC_IP=${WEBAPP_PUBLIC_IP}" >> "$ENV_FILE"
 fi
 
@@ -79,6 +84,6 @@ if [ -f "$NGINX_CONF_SRC" ]; then
   nginx -t && systemctl reload nginx
 fi
 
-wait_for_http_ok_insecure "$PROJECT" "https://${WEBAPP_PUBLIC_IP}/healthz"
+wait_for_http_ok "$PROJECT" "http://127.0.0.1/healthz"
 
 echo "[$PROJECT] Deploy complete"
