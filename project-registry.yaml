@@ -26,5 +26,16 @@ projects:
     service_name: cold-storage-webapp.service
     artifact_path: /srv/cold-storage-webapp
     health_check: curl -sf http://localhost:3000/healthz
-    public_health_check: curl -sf http://206.189.141.91/healthz
+    # Update public IP after manual-crawler restore (current: 157.245.105.32)
+    public_health_check: curl -sf http://157.245.105.32/healthz
+
+  cold-storage-wiki:
+    repo: Amaresh/cold-storage-wiki
+    host: manual-crawler
+    remote_dir: /opt/cold-storage-wiki-src
+    deploy_method: static-nginx
+    publish_dir: /var/www/cold-storage-wiki/current
+    nginx_port: 8094
+    health_check: curl -sf http://127.0.0.1:8094/
+    public_health_check: curl -sf http://157.245.105.32:8094/
 

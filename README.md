@@ -1,11 +1,15 @@
 # cold-storage-ops
 
-Deployment automation for the cold-storage runtime on `manual-crawler` (`206.189.141.91`).
+Deployment automation for the cold-storage runtime on **`manual-crawler`**.
+
+**Active 2026-06-20** — restored at `157.245.105.32`. See `motorrad-deploy/deploy/docs/MANUAL-CRAWLER.md`.
 
 ## Managed projects
 
 - `cold-storage-backend` — builds the Spring Boot jar on-host, updates `/srv/cold-storage-backend/app.jar`, and restarts `cold-storage-backend.service`
 - `cold-storage-buyer-discovery` — updates the worker checkout under `/opt/cold-storage-buyer-discovery`, installs systemd units, and leaves the timer disabled by default unless explicitly enabled
+- `cold-storage-webapp` — Next.js manager app on `:3000` (nginx `:443`)
+- `cold-storage-wiki` — Astro static site at `/var/www/cold-storage-wiki/current`, nginx **`:8094`**
 
 ## Deployment flow
 
@@ -24,7 +28,7 @@ The ops repo also supports `workflow_dispatch` for manual deploys.
 
 Set these in `Amaresh/cold-storage-ops`:
 
-- `DEPLOY_HOST_CRAWLER` — `206.189.141.91`
+- `DEPLOY_HOST_CRAWLER` — `157.245.105.32` (updated 2026-06-20 after restore)
 - `DEPLOY_SSH_KEY_CRAWLER` — private SSH key that can log into `manual-crawler` as `root`
 - `REPO_SYNC_GITHUB_TOKEN` — GitHub token the host can use to clone or update private source repos such as `Amaresh/cold-storage-backend`
 
@@ -54,6 +58,12 @@ gh workflow run deploy.yml -R Amaresh/cold-storage-ops \
   -f enable_timer=false
 ```
 
+```bash
+gh workflow run deploy.yml -R Amaresh/cold-storage-ops \
+  -f project=cold-storage-wiki \
+  -f ref=<commit-sha>
+```
+
 ## Host layout
 
 - Ops repo checkout: `/opt/cold-storage-ops`
@@ -63,3 +73,5 @@ gh workflow run deploy.yml -R Amaresh/cold-storage-ops \
 - Worker env file: `/etc/cold-storage/cold-storage-buyer-discovery.env`
 - Worker service: `cold-storage-buyer-discovery.service`
 - Worker timer: `cold-storage-buyer-discovery.timer`
+- Wiki source checkout: `/opt/cold-storage-wiki-src`
+- Wiki publish dir: `/var/www/cold-storage-wiki/current`
